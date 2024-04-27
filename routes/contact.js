@@ -1,28 +1,34 @@
-const { validateContact, Contact } = require("../models/Contact");
+const { validateEmergencyRequest, EmergencyRequest } = require("../models/EmergencyRequest");
 const auth = require("../middlewares/auth");
 
 const mongoose = require("mongoose");
 const router = require("express").Router();
 
-// create contact.
+// create  EmergencyRequest.
 router.post("/contact", auth, async (req, res) => {
-  const { error } = validateContact(req.body);
+  const { error } = validateEmergencyRequest(req.body);
 
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  const { name, address, email, phone } = req.body;
+  const { emergencytype, name,age,vehicleName,locationDetails,damageStories, mainRequest,passengersRequests,  email, phone } = req.body;
 
   try {
-    const newContact = new Contact({
+    const newEmergencyRequest = new EmergencyRequest({
+      emergencytype,
       name,
-      address,
+      age,
+      vehicleName,
+      locationDetails,
+      damageStories,
+      mainRequest, 
+      passengersRequests,
       email,
       phone,
       postedBy: req.user._id,
     });
-    const result = await newContact.save();
+    const result = await  newEmergencyRequest.save();
 
     return res.status(201).json({ ...result._doc });
   } catch (err) {
@@ -33,7 +39,7 @@ router.post("/contact", auth, async (req, res) => {
 // fetch contact.
 router.get("/mycontacts", auth, async (req, res) => {
   try {
-    const myContacts = await Contact.find({ postedBy: req.user._id }).populate(
+    const myContacts = await EmergencyRequest.find({ postedBy: req.user._id }).populate(
       "postedBy",
       "-password"
     );
@@ -46,14 +52,15 @@ router.get("/mycontacts", auth, async (req, res) => {
 
 // update contact.
 router.put("/contact", auth, async (req, res) => {
-  const { id } = req.body;
+  
+  const { id } = validateEmergencyRequest(req.body);
 
   if (!id) return res.status(400).json({ error: "no id specified." });
   if (!mongoose.isValidObjectId(id))
     return res.status(400).json({ error: "please enter a valid id" });
 
   try {
-    const contact = await Contact.findOne({ _id: id });
+    const contact = await EmergencyRequest.findOne({ _id: id });
 
     if (req.user._id.toString() !== contact.postedBy._id.toString())
       return res
@@ -61,7 +68,7 @@ router.put("/contact", auth, async (req, res) => {
         .json({ error: "you can't edit other people contacts!" });
 
     const updatedData = { ...req.body, id: undefined };
-    const result = await Contact.findByIdAndUpdate(id, updatedData, {
+    const result = await EmergencyRequest.findByIdAndUpdate(id, updatedData, {
       new: true,
     });
 
@@ -80,7 +87,7 @@ router.delete("/delete/:id", auth, async (req, res) => {
   if (!mongoose.isValidObjectId(id))
     return res.status(400).json({ error: "please enter a valid id" });
   try {
-    const contact = await Contact.findOne({ _id: id });
+    const contact = await EmergencyRequest.findOne({ _id: id });
     if (!contact) return res.status(400).json({ error: "no contact found" });
 
     if (req.user._id.toString() !== contact.postedBy._id.toString())
@@ -88,8 +95,8 @@ router.delete("/delete/:id", auth, async (req, res) => {
         .status(401)
         .json({ error: "you can't delete other people contacts!" });
 
-    const result = await Contact.deleteOne({ _id: id });
-    const myContacts = await Contact.find({ postedBy: req.user._id }).populate(
+    const result = await EmergencyRequest.deleteOne({ _id: id });
+    const myContacts = await EmergencyRequest.find({ postedBy: req.user._id }).populate(
       "postedBy",
       "-password"
     );
@@ -112,12 +119,14 @@ router.get("/contact/:id", auth, async (req, res) => {
     return res.status(400).json({ error: "please enter a valid id" });
 
   try {
-    const contact = await Contact.findOne({ _id: id });
+    const contact = await EmergencyRequest.findOne({ _id: id });
 
     return res.status(200).json({ ...contact._doc });
   } catch (err) {
     console.log(err);
   }
 });
+
+ 
 
 module.exports = router;

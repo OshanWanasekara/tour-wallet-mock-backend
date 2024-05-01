@@ -1,8 +1,38 @@
 const { validateEmergencyRequest, EmergencyRequest } = require("../models/EmergencyRequest");
 const auth = require("../middlewares/auth");
-
 const mongoose = require("mongoose");
 const router = require("express").Router();
+const multer = require('multer')
+const path = require('path')
+
+
+//multer configuration
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/");
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}_${file.originalname}`);
+    },
+});
+
+
+const upload = multer({ storage }).single("file");
+
+
+
+router.post("/fileUpload", upload, async (req, res) => {
+    try {
+        return res.status(200).json({
+            success: true,
+            url: req.file.path,
+            fileName: req.file.filename
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, error });
+    }
+});
+
 
 // create  EmergencyRequest.
 router.post("/contact", auth, async (req, res) => {
@@ -12,7 +42,7 @@ router.post("/contact", auth, async (req, res) => {
     return res.status(400).json({ error: error.details[0].message });
   }
 
-  const { emergencytype, name,age,vehicleName,locationDetails,damageStories, mainRequest,passengersRequests,  email, phone } = req.body;
+  const { emergencytype, name,age,vehicleName,locationDetails, mainRequest,passengersRequests,email, phone } = req.body;
 
   try {
     const newEmergencyRequest = new EmergencyRequest({
@@ -21,7 +51,6 @@ router.post("/contact", auth, async (req, res) => {
       age,
       vehicleName,
       locationDetails,
-      damageStories,
       mainRequest, 
       passengersRequests,
       email,
@@ -52,12 +81,30 @@ router.get("/mycontacts", auth, async (req, res) => {
 
 // update contact.
 router.put("/contact", auth, async (req, res) => {
-  
-  const { id } = validateEmergencyRequest(req.body);
+
+  const { id, emergencytype, name,age,vehicleName,locationDetails, mainRequest,passengersRequests,  email, phone } = req.body;
 
   if (!id) return res.status(400).json({ error: "no id specified." });
   if (!mongoose.isValidObjectId(id))
     return res.status(400).json({ error: "please enter a valid id" });
+
+    //age validation
+  if(!age || age < 17 || age > 75) 
+  return res.status(400).json({ error: "Invalid parameter : age" });
+
+//phone number validation
+  if (!phone || phone.length < 10) {
+    return res.status(400).json({ error: "Parameter length must be less than 10 : phone" });
+  }
+
+  //vehicle number validation
+  if (!vehicleName || vehicleName.length > 7 || vehicleName.length < 7) {
+    return res.status(400).json({ error: "Parameter length must be exactly 7 : vehicle" });
+}
+
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ error: "Invalid email format" });
+  }
 
   try {
     const contact = await EmergencyRequest.findOne({ _id: id });

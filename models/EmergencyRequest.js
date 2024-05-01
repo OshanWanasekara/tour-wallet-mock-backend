@@ -29,10 +29,7 @@ const EmergencyRequestSchema = new mongoose.Schema({
     type: String,
     required: [true, "location details are required."],
   },
-  damageStories: {
-    type: String,
-    required: [true, "damage stories are required."],
-  },
+  
   mainRequest: {
     type: String,
     required: [true, "main request is required."],
@@ -75,13 +72,12 @@ const validateEmergencyRequest = (data) => {
     age: Joi.number().min(18).required(),
     vehicleName: Joi.string().min(7).max(8).required(),
     locationDetails: Joi.string().required(),
-    damageStories: Joi.string().required(),
     mainRequest: Joi.string().required(),
     passengersRequests: Joi.string().required(),
     email: Joi.string().email().required(),
     phone: Joi.string().min(7).max(15).required(),
   });
-
+ 
   return schema.validate(data);
 };
 
